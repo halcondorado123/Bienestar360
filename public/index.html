@@ -1,0 +1,1325 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Bienestar 360</title>
+  
+  <!-- Google Fonts: Inter -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'sans-serif'],
+          },
+          colors: {
+            brand: {
+              sidebar: '#0c271e',       /* Tono verde bosque muy oscuro del mockup */
+              sidebarHover: '#13392c',
+              emerald: '#10b981',       /* Verde esmeralda de acción / pill activo (#10b981 o #1db97d) */
+              emeraldHover: '#059669',
+              lightEmerald: '#d1fae5',
+              darkText: '#1f2937',
+              muted: '#6b7280',
+              bgLight: '#f8f9fa',
+              borderLight: '#e5e7eb'
+            }
+          }
+        }
+      }
+    }
+  </script>
+
+  <style>
+    /* Estilos base consistentes con el mockup */
+    body {
+      font-family: 'Inter', sans-serif;
+      background-color: #f8f9fa;
+      color: #212121;
+      -webkit-font-smoothing: antialiased;
+    }
+    
+    /* Scrollbar sutil */
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #f1f1f1;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #cbd5e1;
+      border-radius: 9999px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #94a3b8;
+    }
+
+    /* Animación de transición entre pantallas */
+    .view-section {
+      display: none;
+      opacity: 0;
+      transition: opacity 0.2s ease-in-out;
+    }
+    .view-section.active {
+      display: block;
+      opacity: 1;
+    }
+
+    /* Notificación Toast flotante */
+    #toast-notification {
+      transform: translateY(120%);
+      transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.3s ease;
+    }
+    #toast-notification.show {
+      transform: translateY(0);
+      opacity: 1;
+    }
+  </style>
+</head>
+<body class="min-h-screen flex flex-col bg-[#f8f9fa] text-[#212121] overflow-x-hidden">
+
+  <!-- ========================================== -->
+  <!-- 1. BARRA SUPERIOR (HEADER GLOBAL)          -->
+  <!-- ========================================== -->
+  <header class="h-16 bg-white border-b border-gray-200 px-4 md:px-8 flex items-center justify-between sticky top-0 z-30 shadow-sm">
+    <!-- Logo Izquierda -->
+    <div class="flex items-center gap-3">
+      <!-- Botón Hamburguesa Móvil -->
+      <button id="mobile-menu-toggle" class="md:hidden p-1.5 text-gray-700 hover:text-brand-emerald focus:outline-none" aria-label="Abrir menú">
+        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/>
+        </svg>
+      </button>
+      <div onclick="navigateTo('inicio')" class="cursor-pointer flex items-center gap-2">
+        <span class="text-xl md:text-2xl font-bold tracking-tight text-[#111827]">Bienestar 360</span>
+      </div>
+    </div>
+
+    <!-- Buscador Central (Mockup exacto) -->
+    <div class="hidden sm:flex items-center flex-1 max-w-lg mx-6">
+      <div class="relative w-full">
+        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+          </svg>
+        </div>
+        <input 
+          id="global-search-input"
+          type="text" 
+          placeholder="Buscar recomendaciones saludables..." 
+          class="w-full pl-9 pr-4 py-2 bg-[#f3f4f6] text-sm text-gray-800 placeholder-gray-400 rounded-lg border border-transparent focus:border-brand-emerald focus:bg-white focus:outline-none transition-all"
+          onkeydown="if(event.key === 'Enter') handleGlobalSearch(this.value)"
+        >
+      </div>
+    </div>
+
+    <!-- Perfil / Login / Logo Bienestar a la derecha -->
+    <div class="flex items-center gap-3">
+      <!-- Botones de sesión accesibles -->
+      <div id="auth-header-actions" class="flex items-center gap-2">
+        <button onclick="navigateTo('login')" class="text-xs md:text-sm font-medium text-gray-600 hover:text-brand-emerald px-2 py-1 transition">Ingresar</button>
+        <button onclick="navigateTo('registro')" class="text-xs md:text-sm font-medium bg-brand-emerald hover:bg-brand-emeraldHover text-white px-3 py-1.5 rounded-lg transition shadow-sm">Registrarse</button>
+      </div>
+      <div id="user-header-profile" class="hidden items-center gap-2">
+        <span id="user-display-name" class="text-xs md:text-sm font-medium text-gray-700 hidden sm:inline">Usuario</span>
+        <button onclick="logoutUser()" title="Cerrar sesión" class="text-xs text-red-500 hover:underline">Salir</button>
+      </div>
+
+      <!-- Icono insignia verde de Bienestar 360 -->
+      <div class="w-9 h-9 rounded-full border border-green-200 bg-green-50 flex items-center justify-center text-brand-emerald shadow-inner" title="Bienestar 360">
+        <svg class="w-5 h-5 text-emerald-600" viewBox="0 0 24 24" fill="currentColor">
+          <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 14.5v-9l6 4.5-6 4.5z" opacity="0.2"/>
+          <path d="M12 3c-4.97 0-9 4.03-9 9 0 2.12.74 4.07 1.97 5.61L4.35 19.4c-.2.2-.2.51 0 .71.2.2.51.2.71 0l1.83-1.83C8.42 19.39 10.13 20 12 20c4.97 0 9-4.03 9-9s-4.03-9-9-9zm3.5 12.5c-.83 0-1.5-.67-1.5-1.5 0-.83.67-1.5 1.5-1.5s1.5.67 1.5 1.5c0 .83-.67 1.5-1.5 1.5zm-5-3c-.83 0-1.5-.67-1.5-1.5 0-.83.67-1.5 1.5-1.5s1.5.67 1.5 1.5c0 .83-.67 1.5-1.5 1.5z"/>
+        </svg>
+      </div>
+    </div>
+  </header>
+
+  <!-- ========================================== -->
+  <!-- CONTENEDOR PRINCIPAL: SIDEBAR + VISTAS      -->
+  <!-- ========================================== -->
+  <div class="flex flex-1 relative overflow-hidden">
+
+    <!-- BARRA LATERAL (SIDEBAR DE COLOR VERDE PROFUNDO #0c271e) -->
+    <aside id="sidebar-nav" class="fixed md:sticky top-16 z-20 h-[calc(100vh-4rem)] w-60 bg-brand-sidebar text-white flex flex-col py-6 px-4 transition-transform duration-300 ease-in-out -translate-x-full md:translate-x-0 shadow-lg md:shadow-none">
+      <nav class="space-y-2 flex-1">
+        <!-- Ítem: Inicio -->
+        <button onclick="navigateTo('inicio')" data-view="inicio" class="nav-btn w-full flex items-center px-4 py-2.5 rounded-xl text-sm font-medium transition-all text-gray-300 hover:text-white hover:bg-brand-sidebarHover">
+          <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg>
+          Inicio
+        </button>
+
+        <!-- Ítem: Explorar -->
+        <button onclick="navigateTo('explorar')" data-view="explorar" class="nav-btn w-full flex items-center px-4 py-2.5 rounded-xl text-sm font-medium transition-all text-gray-300 hover:text-white hover:bg-brand-sidebarHover">
+          <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+          Explorar
+        </button>
+
+        <!-- Ítem: Favoritos -->
+        <button onclick="navigateTo('favoritos')" data-view="favoritos" class="nav-btn w-full flex items-center justify-between px-4 py-2.5 rounded-xl text-sm font-medium transition-all text-gray-300 hover:text-white hover:bg-brand-sidebarHover">
+          <div class="flex items-center">
+            <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"/></svg>
+            Favoritos
+          </div>
+          <span id="badge-fav-count" class="hidden text-xs bg-emerald-500 text-white font-bold px-2 py-0.5 rounded-full">0</span>
+        </button>
+
+        <!-- Ítem: Mis hábitos -->
+        <button onclick="navigateTo('habitos')" data-view="habitos" class="nav-btn w-full flex items-center px-4 py-2.5 rounded-xl text-sm font-medium transition-all text-gray-300 hover:text-white hover:bg-brand-sidebarHover">
+          <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/></svg>
+          Mis habitos
+        </button>
+
+        <!-- Ítem: Mi perfil -->
+        <button onclick="navigateTo('perfil')" data-view="perfil" class="nav-btn w-full flex items-center px-4 py-2.5 rounded-xl text-sm font-medium transition-all text-gray-300 hover:text-white hover:bg-brand-sidebarHover">
+          <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
+          Mi perfil
+        </button>
+      </nav>
+
+      <!-- Pie de barra lateral / Acceso de Autenticación rápido -->
+      <div class="border-t border-emerald-950/70 pt-4 mt-auto text-xs text-emerald-300/80">
+        <p class="font-semibold text-emerald-200">Bienestar 360 v2.1</p>
+        <p class="text-[11px] text-gray-400 mt-1">Salud preventiva & bienestar</p>
+      </div>
+    </aside>
+
+    <!-- Overlay de oscurecimiento para móvil -->
+    <div id="sidebar-overlay" onclick="toggleMobileMenu()" class="fixed inset-0 bg-black/40 z-10 hidden md:hidden"></div>
+
+    <!-- ========================================== -->
+    <!-- ÁREA DE CONTENIDO DE LAS VISTAS            -->
+    <!-- ========================================== -->
+    <main class="flex-1 p-4 md:p-8 lg:p-10 max-w-7xl mx-auto w-full overflow-y-auto">
+
+      <!-- ==================================================== -->
+      <!-- VISTA 01: INICIO (Mockup 01)                         -->
+      <!-- ==================================================== -->
+      <section id="view-inicio" class="view-section space-y-8">
+        <!-- Saludo y Bienvenida -->
+        <div>
+          <h1 class="text-2xl md:text-3xl font-bold text-gray-900 tracking-tight">¡Hola! Bienvenido a Bienestar 360</h1>
+          <p class="text-gray-500 mt-1.5 text-sm md:text-base">Encuentra recomendaciones para cuidar tu cuerpo y mente cada día.</p>
+        </div>
+
+        <!-- Explora por categoría -->
+        <div class="space-y-4">
+          <h2 class="text-lg font-bold text-gray-800">Explora por categoría</h2>
+          <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+            
+            <!-- Alimentación -->
+            <button onclick="filterByCategory('Alimentación')" class="category-card p-6 rounded-xl bg-white border border-gray-200 shadow-sm hover:shadow-md hover:border-brand-emerald flex flex-col items-center justify-center transition-all group text-center min-h-[110px]">
+              <span class="text-gray-700 font-medium text-sm md:text-base group-hover:text-brand-emerald">Alimentación</span>
+            </button>
+            
+            <!-- Actividad Física -->
+            <button onclick="filterByCategory('Actividad Física')" class="category-card p-6 rounded-xl bg-white border border-gray-200 shadow-sm hover:shadow-md hover:border-brand-emerald flex flex-col items-center justify-center transition-all group text-center min-h-[110px]">
+              <span class="text-gray-700 font-medium text-sm md:text-base group-hover:text-brand-emerald">Actividad Física</span>
+            </button>
+            
+            <!-- Descanso -->
+            <button onclick="filterByCategory('Descanso')" class="category-card p-6 rounded-xl bg-white border border-gray-200 shadow-sm hover:shadow-md hover:border-brand-emerald flex flex-col items-center justify-center transition-all group text-center min-h-[110px]">
+              <span class="text-gray-700 font-medium text-sm md:text-base group-hover:text-brand-emerald">Descanso</span>
+            </button>
+            
+            <!-- Bienestar -->
+            <button onclick="filterByCategory('Bienestar')" class="category-card p-6 rounded-xl bg-white border border-gray-200 shadow-sm hover:shadow-md hover:border-brand-emerald flex flex-col items-center justify-center transition-all group text-center min-h-[110px]">
+              <span class="text-gray-700 font-medium text-sm md:text-base group-hover:text-brand-emerald">Bienestar</span>
+            </button>
+
+          </div>
+        </div>
+
+        <!-- Recomendaciones para ti -->
+        <div class="space-y-4 pt-2">
+          <h2 class="text-lg font-bold text-gray-800">Recomendaciones para ti</h2>
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+
+            <!-- Card 1: Alimentación -->
+            <div class="bg-white rounded-2xl border border-gray-200/90 overflow-hidden shadow-sm hover:shadow-md transition-shadow flex flex-col">
+              <div class="h-44 w-full overflow-hidden bg-gray-100">
+                <img 
+                  src="https://images.unsplash.com/photo-1546069901-ba9599a7e63c?auto=format&fit=crop&w=700&q=80" 
+                  alt="Alimenta tu cuerpo de forma equilibrada" 
+                  class="w-full h-full object-cover transform hover:scale-105 transition-transform duration-300"
+                  onerror="this.src='https://placehold.co/600x350/e2e8f0/2d3748?text=Alimentacion'"
+                />
+              </div>
+              <div class="p-5 flex-1 flex flex-col justify-between">
+                <div>
+                  <h3 class="font-semibold text-gray-900 text-base">Alimenta tu cuerpo de forma equilibrada</h3>
+                  <p class="text-xs text-gray-500 mt-2 line-clamp-2">Descubre consejos prácticos para mejorar tus hábitos alimenticios y mantener una dieta variada.</p>
+                </div>
+                <div class="pt-4 flex justify-end">
+                  <button onclick="openDetailView(1)" class="text-xs font-semibold text-emerald-600 hover:text-emerald-700 flex items-center gap-1 group">
+                    Leer recomendación <span class="group-hover:translate-x-1 transition-transform">→</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <!-- Card 2: Ejercicio -->
+            <div class="bg-white rounded-2xl border border-gray-200/90 overflow-hidden shadow-sm hover:shadow-md transition-shadow flex flex-col">
+              <div class="h-44 w-full overflow-hidden bg-gray-100">
+                <img 
+                  src="https://images.unsplash.com/photo-1518611012118-696072aa579a?auto=format&fit=crop&w=700&q=80" 
+                  alt="Muévete al menos 30 minutos al día" 
+                  class="w-full h-full object-cover transform hover:scale-105 transition-transform duration-300"
+                  onerror="this.src='https://placehold.co/600x350/e2e8f0/2d3748?text=Actividad+Fisica'"
+                />
+              </div>
+              <div class="p-5 flex-1 flex flex-col justify-between">
+                <div>
+                  <h3 class="font-semibold text-gray-900 text-base">Muévete al menos 30 minutos al día</h3>
+                  <p class="text-xs text-gray-500 mt-2 line-clamp-2">Conoce actividades sencillas para incorporar el movimiento a tu rutina diaria.</p>
+                </div>
+                <div class="pt-4 flex justify-end">
+                  <button onclick="openDetailView(2)" class="text-xs font-semibold text-emerald-600 hover:text-emerald-700 flex items-center gap-1 group">
+                    Leer recomendación <span class="group-hover:translate-x-1 transition-transform">→</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <!-- Card 3: Sueño -->
+            <div class="bg-white rounded-2xl border border-gray-200/90 overflow-hidden shadow-sm hover:shadow-md transition-shadow flex flex-col">
+              <div class="h-44 w-full overflow-hidden bg-gray-100">
+                <img 
+                  src="https://images.unsplash.com/photo-1541781774459-bb2af2f05b55?auto=format&fit=crop&w=700&q=80" 
+                  alt="Mejora la calidad de tu sueño" 
+                  class="w-full h-full object-cover transform hover:scale-105 transition-transform duration-300"
+                  onerror="this.src='https://placehold.co/600x350/e2e8f0/2d3748?text=Descanso'"
+                />
+              </div>
+              <div class="p-5 flex-1 flex flex-col justify-between">
+                <div>
+                  <h3 class="font-semibold text-gray-900 text-base">Mejora la calidad de tu sueño</h3>
+                  <p class="text-xs text-gray-500 mt-2 line-clamp-2">Aprende hábitos que favorecen un descanso reparador y una mejor recuperación.</p>
+                </div>
+                <div class="pt-4 flex justify-end">
+                  <button onclick="openDetailView(3)" class="text-xs font-semibold text-emerald-600 hover:text-emerald-700 flex items-center gap-1 group">
+                    Leer recomendación <span class="group-hover:translate-x-1 transition-transform">→</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+
+          </div>
+        </div>
+      </section>
+
+      <!-- ==================================================== -->
+      <!-- VISTA 02: EXPLORAR (Mockup 02)                       -->
+      <!-- ==================================================== -->
+      <section id="view-explorar" class="view-section space-y-6">
+        <div>
+          <h1 class="text-2xl md:text-3xl font-bold text-gray-900 tracking-tight">Explora recomendaciones saludables</h1>
+          <p class="text-gray-500 mt-1 text-sm">Encuentra contenido saludable según tus intereses y objetivos.</p>
+        </div>
+
+        <!-- Filtros (Dropdowns estilizados idénticos al mockup) -->
+        <div class="space-y-3">
+          <label class="block text-sm font-bold text-gray-800">Filtrar recomendaciones</label>
+          <div class="flex flex-wrap gap-3">
+            <!-- Categoría -->
+            <select id="filter-categoria" onchange="applyFilters()" class="bg-white border border-gray-300 text-gray-700 text-sm rounded-lg px-4 py-2.5 focus:outline-none focus:border-brand-emerald cursor-pointer shadow-sm min-w-[180px]">
+              <option value="todas">Todas las categorías</option>
+              <option value="Alimentación">Alimentación</option>
+              <option value="Actividad Física">Actividad Física</option>
+              <option value="Descanso">Descanso</option>
+              <option value="Bienestar">Bienestar</option>
+            </select>
+
+            <!-- Objetivo -->
+            <select id="filter-objetivo" onchange="applyFilters()" class="bg-white border border-gray-300 text-gray-700 text-sm rounded-lg px-4 py-2.5 focus:outline-none focus:border-brand-emerald cursor-pointer shadow-sm min-w-[180px]">
+              <option value="todos">Seleccionar objetivo</option>
+              <option value="energia">Aumentar energía</option>
+              <option value="estres">Reducir estrés</option>
+              <option value="peso">Peso balanceado</option>
+              <option value="sueño">Dormir profundamente</option>
+            </select>
+
+            <!-- Tipo de contenido -->
+            <select id="filter-tipo" onchange="applyFilters()" class="bg-white border border-gray-300 text-gray-700 text-sm rounded-lg px-4 py-2.5 focus:outline-none focus:border-brand-emerald cursor-pointer shadow-sm min-w-[180px]">
+              <option value="todos">Tipo de contenido</option>
+              <option value="guia">Guías prácticas</option>
+              <option value="rutina">Rutinas diarias</option>
+              <option value="receta">Recetas saludables</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Resultados de búsqueda -->
+        <div class="pt-4 space-y-4">
+          <div class="flex items-center justify-between">
+            <h2 class="text-lg font-bold text-gray-800">Resultados de tu búsqueda</h2>
+            <span id="results-count" class="text-xs text-gray-500">Mostrando 3 recomendaciones</span>
+          </div>
+
+          <!-- Grid dinámico de tarjetas -->
+          <div id="explore-results-grid" class="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <!-- Se inyecta dinámicamente con renderExploreCards() -->
+          </div>
+        </div>
+      </section>
+
+      <!-- ==================================================== -->
+      <!-- VISTA 03: DETALLE DE RECOMENDACIÓN (Mockup 03)        -->
+      <!-- ==================================================== -->
+      <section id="view-detalle" class="view-section space-y-6 max-w-4xl">
+        <!-- Volver atrás -->
+        <button onclick="goBack()" class="inline-flex items-center text-xs font-semibold text-gray-500 hover:text-brand-emerald gap-1">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/></svg>
+          Volver a recomendaciones
+        </button>
+
+        <!-- Cabecera de artículo -->
+        <div>
+          <span id="detail-category-tag" class="text-xs font-bold uppercase tracking-wider text-emerald-600">ALIMENTACIÓN</span>
+          <h1 id="detail-title" class="text-2xl md:text-3xl font-bold text-gray-900 mt-2">Cómo mejorar tus hábitos alimenticios</h1>
+          <p id="detail-subtitle" class="text-gray-500 mt-2 text-sm md:text-base">Descubre cómo incorporar una alimentación variada y equilibrada a tu vida diaria.</p>
+        </div>
+
+        <!-- Imagen principal destacada -->
+        <div class="w-full h-64 md:h-80 rounded-2xl overflow-hidden border border-gray-200 shadow-sm bg-gray-100">
+          <img 
+            id="detail-main-img"
+            src="https://images.unsplash.com/photo-1546069901-ba9599a7e63c?auto=format&fit=crop&w=1200&q=80" 
+            alt="Detalle" 
+            class="w-full h-full object-cover"
+          />
+        </div>
+
+        <!-- Contenido y recomendaciones numeradas con checks verdes -->
+        <div class="space-y-4 pt-2">
+          <h2 class="text-lg font-bold text-gray-800">Recomendaciones para mejorar tu alimentación</h2>
+          <p class="text-xs md:text-sm text-gray-600 leading-relaxed">
+            Una alimentación saludable te ayuda a mantener un buen estado de salud, tener más energía y mejorar tu bienestar en el día a día. A continuación, encontrarás algunos consejos prácticos que puedes aplicar en tu rutina diaria:
+          </p>
+
+          <!-- Lista con círculos verdes numerados (Mockup idéntico) -->
+          <ul class="space-y-3 pt-2 text-sm text-gray-700">
+            <li class="flex items-start gap-3">
+              <span class="w-5 h-5 rounded-full bg-emerald-600 text-white flex items-center justify-center text-xs font-bold shrink-0 mt-0.5">1</span>
+              <span>Prioriza el consumo de frutas y verduras frescas de temporada.</span>
+            </li>
+            <li class="flex items-start gap-3">
+              <span class="w-5 h-5 rounded-full bg-emerald-600 text-white flex items-center justify-center text-xs font-bold shrink-0 mt-0.5">2</span>
+              <span>Mantén una hidratación adecuada durante el día bebiendo agua simple.</span>
+            </li>
+            <li class="flex items-start gap-3">
+              <span class="w-5 h-5 rounded-full bg-emerald-600 text-white flex items-center justify-center text-xs font-bold shrink-0 mt-0.5">3</span>
+              <span>Procura mantener horarios regulares de alimentación y masticar despacio.</span>
+            </li>
+          </ul>
+        </div>
+
+        <!-- Botones de Acción (Guardar en favoritos / Marcar como hábito) -->
+        <div class="pt-6 flex flex-wrap gap-4 border-t border-gray-200">
+          <!-- Botón Guardar en favoritos -->
+          <button id="btn-toggle-favorite" onclick="toggleCurrentFavorite()" class="px-5 py-2.5 rounded-lg bg-brand-emerald hover:bg-brand-emeraldHover text-white text-xs md:text-sm font-medium inline-flex items-center gap-2 shadow-sm transition-colors">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"/></svg>
+            <span id="btn-fav-text">Guardar en favoritos</span>
+          </button>
+
+          <!-- Botón Marcar como hábito -->
+          <button onclick="markCurrentAsHabit()" class="px-5 py-2.5 rounded-lg bg-brand-emerald hover:bg-brand-emeraldHover text-white text-xs md:text-sm font-medium inline-flex items-center gap-2 shadow-sm transition-colors">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+            <span>Marcar como hábito</span>
+          </button>
+        </div>
+      </section>
+
+      <!-- ==================================================== -->
+      <!-- VISTA 04: CREA TU CUENTA / REGISTRO (Mockup 04)      -->
+      <!-- ==================================================== -->
+      <section id="view-registro" class="view-section py-4">
+        <div class="max-w-md mx-auto text-center mb-6">
+          <h1 class="text-2xl font-bold text-gray-900">Crea tu cuenta</h1>
+          <p class="text-xs text-gray-500 mt-1">Comienza a construir hábitos saludables con Bienestar 360.</p>
+        </div>
+
+        <div class="max-w-md mx-auto bg-white rounded-2xl border border-gray-200 p-6 md:p-8 shadow-sm">
+          <form onsubmit="handleRegister(event)" class="space-y-4 text-left">
+            <div>
+              <label class="block text-xs font-medium text-gray-700 mb-1">Nombre completo</label>
+              <input id="reg-name" type="text" placeholder="Ingresa tu nombre completo" required class="w-full text-xs md:text-sm px-3.5 py-2.5 rounded-lg border border-gray-300 focus:outline-none focus:border-brand-emerald">
+            </div>
+
+            <div>
+              <label class="block text-xs font-medium text-gray-700 mb-1">Correo electrónico</label>
+              <input id="reg-email" type="email" placeholder="Ingresa correo electrónico" required class="w-full text-xs md:text-sm px-3.5 py-2.5 rounded-lg border border-gray-300 focus:outline-none focus:border-brand-emerald">
+            </div>
+
+            <div>
+              <label class="block text-xs font-medium text-gray-700 mb-1">Contraseña</label>
+              <input id="reg-password" type="password" placeholder="Ingresa una contraseña" required class="w-full text-xs md:text-sm px-3.5 py-2.5 rounded-lg border border-gray-300 focus:outline-none focus:border-brand-emerald">
+            </div>
+
+            <div>
+              <label class="block text-xs font-medium text-gray-700 mb-1">Confirmar contraseña</label>
+              <input id="reg-confirm-password" type="password" placeholder="Confirma tu contraseña" required class="w-full text-xs md:text-sm px-3.5 py-2.5 rounded-lg border border-gray-300 focus:outline-none focus:border-brand-emerald">
+              <span class="text-[10px] text-gray-400 block mt-1">Mínimo 8 caracteres</span>
+            </div>
+
+            <div class="flex items-center gap-2 pt-1">
+              <input id="reg-terms" type="checkbox" required class="rounded border-gray-300 text-brand-emerald focus:ring-brand-emerald">
+              <label for="reg-terms" class="text-[11px] text-gray-600">Acepto los términos y condiciones</label>
+            </div>
+
+            <button type="submit" class="w-full py-2.5 bg-brand-emerald hover:bg-brand-emeraldHover text-white text-xs md:text-sm font-medium rounded-lg transition-colors shadow-sm mt-3">
+              Crear cuenta
+            </button>
+          </form>
+
+          <p class="text-center text-xs text-gray-500 mt-5">
+            ¿Ya tienes una cuenta? 
+            <button onclick="navigateTo('login')" class="text-brand-emerald font-semibold hover:underline">Inicia sesión</button>
+          </p>
+        </div>
+      </section>
+
+      <!-- ==================================================== -->
+      <!-- VISTA 05: INICIAR SESIÓN (Mockup 05)                 -->
+      <!-- ==================================================== -->
+      <section id="view-login" class="view-section py-8">
+        <div class="max-w-md mx-auto text-center mb-6">
+          <h1 class="text-2xl font-bold text-gray-900">Bienvenido de nuevo</h1>
+          <p class="text-xs text-gray-500 mt-1">Inicia sesión para continuar cuidando de ti</p>
+        </div>
+
+        <div class="max-w-md mx-auto bg-white rounded-2xl border border-gray-200 p-6 md:p-8 shadow-sm">
+          <form onsubmit="handleLogin(event)" class="space-y-4 text-left">
+            <div>
+              <label class="block text-xs font-medium text-gray-700 mb-1">Correo electrónico</label>
+              <input id="login-email" type="email" placeholder="Ingresa tu correo electrónico" required class="w-full text-xs md:text-sm px-3.5 py-2.5 rounded-lg border border-gray-300 focus:outline-none focus:border-brand-emerald">
+            </div>
+
+            <div>
+              <label class="block text-xs font-medium text-gray-700 mb-1">Contraseña</label>
+              <input id="login-password" type="password" placeholder="Ingresa tu contraseña" required class="w-full text-xs md:text-sm px-3.5 py-2.5 rounded-lg border border-gray-300 focus:outline-none focus:border-brand-emerald">
+            </div>
+
+            <div class="flex items-center justify-between text-[11px] pt-1">
+              <label class="flex items-center gap-1.5 text-gray-600 cursor-pointer">
+                <input type="checkbox" checked class="rounded border-gray-300 text-brand-emerald focus:ring-brand-emerald">
+                Recordarme
+              </label>
+              <button type="button" onclick="showToast('Se ha enviado un enlace de recuperación a tu correo.')" class="text-emerald-600 hover:underline">¿Olvidaste tu contraseña?</button>
+            </div>
+
+            <button type="submit" class="w-full py-2.5 bg-brand-emerald hover:bg-brand-emeraldHover text-white text-xs md:text-sm font-medium rounded-lg transition-colors shadow-sm mt-3">
+              Iniciar sesión
+            </button>
+          </form>
+
+          <p class="text-center text-xs text-gray-500 mt-5">
+            ¿No tienes cuenta? 
+            <button onclick="navigateTo('registro')" class="text-brand-emerald font-semibold hover:underline">Regístrate</button>
+          </p>
+        </div>
+      </section>
+
+      <!-- ==================================================== -->
+      <!-- VISTA 06: MI PERFIL (Mockup 06)                      -->
+      <!-- ==================================================== -->
+      <section id="view-perfil" class="view-section space-y-6 max-w-4xl">
+        <div>
+          <h1 class="text-2xl md:text-3xl font-bold text-gray-900 tracking-tight">Mi perfil</h1>
+          <p class="text-gray-500 mt-1 text-sm">Administra tu información personal y tus objetivos de bienestar</p>
+        </div>
+
+        <form onsubmit="handleSaveProfile(event)" class="space-y-6">
+          <!-- Card: Información Personal -->
+          <div class="bg-white rounded-2xl border border-gray-200 p-6 shadow-sm">
+            <h2 class="text-sm md:text-base font-bold text-gray-900 mb-4">Información personal</h2>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 text-left">
+              <div>
+                <label class="block text-xs font-semibold text-gray-700 mb-1">Nombre completo</label>
+                <input id="profile-name" type="text" value="Camila Morales" class="w-full text-xs md:text-sm px-3.5 py-2.5 rounded-lg border border-gray-300 focus:outline-none focus:border-brand-emerald">
+              </div>
+              <div>
+                <label class="block text-xs font-semibold text-gray-700 mb-1">Correo electrónico</label>
+                <input id="profile-email" type="email" value="camila.morales@bienestar.com" class="w-full text-xs md:text-sm px-3.5 py-2.5 rounded-lg border border-gray-300 focus:outline-none focus:border-brand-emerald">
+              </div>
+              <div>
+                <label class="block text-xs font-semibold text-gray-700 mb-1">Edad</label>
+                <input id="profile-age" type="number" value="32" class="w-full text-xs md:text-sm px-3.5 py-2.5 rounded-lg border border-gray-300 focus:outline-none focus:border-brand-emerald">
+              </div>
+            </div>
+          </div>
+
+          <!-- Card: Objetivos de Bienestar -->
+          <div class="bg-white rounded-2xl border border-gray-200 p-6 shadow-sm">
+            <h2 class="text-sm md:text-base font-bold text-gray-900 mb-4">Objetivos de bienestar</h2>
+            <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 text-xs md:text-sm text-gray-700">
+              <label class="flex items-center gap-2.5 p-2 rounded-lg hover:bg-gray-50 cursor-pointer">
+                <input type="checkbox" id="goal-alim" checked class="w-4 h-4 rounded text-brand-emerald border-gray-300 focus:ring-brand-emerald">
+                <span>Alimentación saludable</span>
+              </label>
+              <label class="flex items-center gap-2.5 p-2 rounded-lg hover:bg-gray-50 cursor-pointer">
+                <input type="checkbox" id="goal-act" checked class="w-4 h-4 rounded text-brand-emerald border-gray-300 focus:ring-brand-emerald">
+                <span>Mejorar mi actividad física</span>
+              </label>
+              <label class="flex items-center gap-2.5 p-2 rounded-lg hover:bg-gray-50 cursor-pointer">
+                <input type="checkbox" id="goal-desc" checked class="w-4 h-4 rounded text-brand-emerald border-gray-300 focus:ring-brand-emerald">
+                <span>Mejorar mi descanso</span>
+              </label>
+              <label class="flex items-center gap-2.5 p-2 rounded-lg hover:bg-gray-50 cursor-pointer">
+                <input type="checkbox" id="goal-emoc" class="w-4 h-4 rounded text-brand-emerald border-gray-300 focus:ring-brand-emerald">
+                <span>Bienestar emocional</span>
+              </label>
+            </div>
+          </div>
+
+          <!-- Card: Preferencias de Contenido -->
+          <div class="bg-white rounded-2xl border border-gray-200 p-6 shadow-sm space-y-4">
+            <div>
+              <h2 class="text-sm md:text-base font-bold text-gray-900">Preferencias de contenido</h2>
+              <p class="text-xs text-gray-500 mt-0.5">Elige los tipos de recomendaciones que deseas recibir en Explorar</p>
+            </div>
+
+            <div class="space-y-3 pt-2">
+              <div class="flex items-start gap-3">
+                <input type="checkbox" id="pref-1" checked class="w-4 h-4 mt-0.5 rounded text-brand-emerald border-gray-300 focus:ring-brand-emerald">
+                <div>
+                  <span class="text-xs md:text-sm font-semibold text-gray-800">Alimentación saludable</span>
+                  <p class="text-xs text-gray-500">Recetas, consejos de nutrición y planes de alimentación equilibrados.</p>
+                </div>
+              </div>
+
+              <div class="flex items-start gap-3">
+                <input type="checkbox" id="pref-2" checked class="w-4 h-4 mt-0.5 rounded text-brand-emerald border-gray-300 focus:ring-brand-emerald">
+                <div>
+                  <span class="text-xs md:text-sm font-semibold text-gray-800">Mejorar mi actividad física</span>
+                  <p class="text-xs text-gray-500">Rutinas, ejercicios en casa y tips de entrenamiento progresivo.</p>
+                </div>
+              </div>
+
+              <div class="flex items-start gap-3">
+                <input type="checkbox" id="pref-3" checked class="w-4 h-4 mt-0.5 rounded text-brand-emerald border-gray-300 focus:ring-brand-emerald">
+                <div>
+                  <span class="text-xs md:text-sm font-semibold text-gray-800">Mejorar mi descanso</span>
+                  <p class="text-xs text-gray-500">Hábitos para un sueño reparador e higiene del sueño.</p>
+                </div>
+              </div>
+
+              <div class="flex items-start gap-3">
+                <input type="checkbox" id="pref-4" class="w-4 h-4 mt-0.5 rounded text-brand-emerald border-gray-300 focus:ring-brand-emerald">
+                <div>
+                  <span class="text-xs md:text-sm font-semibold text-gray-800">Bienestar emocional</span>
+                  <p class="text-xs text-gray-500">Consejos del manejo del estrés, mindfulness y equilibrio mental.</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="pt-2">
+            <button type="submit" class="px-6 py-2.5 bg-brand-emerald hover:bg-brand-emeraldHover text-white text-xs md:text-sm font-semibold rounded-lg shadow-sm transition">
+              Guardar cambios
+            </button>
+          </div>
+        </form>
+      </section>
+
+      <!-- ==================================================== -->
+      <!-- VISTA 07: FAVORITOS (Mockup 07)                      -->
+      <!-- ==================================================== -->
+      <section id="view-favoritos" class="view-section space-y-6">
+        <div>
+          <h1 class="text-2xl md:text-3xl font-bold text-gray-900 tracking-tight">Mis favoritos</h1>
+          <p class="text-gray-500 mt-1 text-sm">Aquí encontrarás las recomendaciones que has guardado para consultar cuando quieras.</p>
+        </div>
+
+        <div class="space-y-4">
+          <h2 class="text-lg font-bold text-gray-800">Recomendaciones guardadas</h2>
+
+          <!-- Grid de Favoritos Guardados -->
+          <div id="favorites-grid" class="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <!-- Se inyecta dinámicamente con renderFavorites() -->
+          </div>
+
+          <!-- Estado Vacío cuando no hay favoritos -->
+          <div id="favorites-empty-state" class="hidden text-center py-16 bg-white rounded-2xl border border-dashed border-gray-300 p-8">
+            <div class="w-12 h-12 mx-auto rounded-full bg-emerald-50 text-emerald-600 flex items-center justify-center mb-3">
+              <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"/></svg>
+            </div>
+            <h3 class="text-base font-bold text-gray-800">No tienes recomendaciones guardadas aún</h3>
+            <p class="text-xs text-gray-500 mt-1 max-w-sm mx-auto">Explora nuestro catálogo y presiona "Guardar en favoritos" para acceder rápidamente a ellas.</p>
+            <button onclick="navigateTo('explorar')" class="mt-4 px-4 py-2 bg-brand-emerald text-white text-xs font-semibold rounded-lg hover:bg-brand-emeraldHover transition">
+              Explorar recomendaciones
+            </button>
+          </div>
+        </div>
+      </section>
+
+      <!-- ==================================================== -->
+      <!-- VISTA 08: MIS HÁBITOS (Mockup 08)                    -->
+      <!-- ==================================================== -->
+      <section id="view-habitos" class="view-section space-y-6">
+        <div>
+          <h1 class="text-2xl md:text-3xl font-bold text-gray-900 tracking-tight">Mis hábitos</h1>
+          <p class="text-gray-500 mt-1 text-sm">Registra tus actividades y haz seguimiento a tus hábitos saludables.</p>
+        </div>
+
+        <div class="space-y-4">
+          <h2 class="text-lg font-bold text-gray-800">Seguimiento de mis hábitos</h2>
+
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+
+            <!-- Card 1: Hidratación -->
+            <div class="bg-white rounded-2xl border border-gray-200 p-5 shadow-sm flex flex-col justify-between">
+              <div>
+                <span class="text-[11px] font-bold text-emerald-600 uppercase tracking-wide">HIDRATACIÓN</span>
+                <h3 class="text-base font-bold text-gray-900 mt-1">Beber suficiente agua</h3>
+                <p class="text-xs text-gray-500 mt-1.5 leading-relaxed">Mantén una hidratación adecuada durante el día. Registra cuántos vasos de agua consumes.</p>
+                
+                <div class="mt-4 text-xs font-medium text-gray-600">
+                  Meta diaria: <span class="font-bold text-gray-900">8 vasos de agua</span>
+                </div>
+
+                <div class="mt-2">
+                  <div class="flex justify-between text-[11px] font-semibold text-gray-600 mb-1">
+                    <span>Progreso de hoy</span>
+                    <span id="text-water-progress" class="text-emerald-700 font-bold">5 de 8 vasos completados</span>
+                  </div>
+                  <div class="w-full bg-gray-100 rounded-full h-2.5 overflow-hidden">
+                    <div id="bar-water-progress" class="bg-brand-emerald h-2.5 rounded-full transition-all duration-300" style="width: 62.5%"></div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="pt-5">
+                <button onclick="registerHabitProgress('water')" class="w-full py-2 bg-brand-emerald hover:bg-brand-emeraldHover text-white text-xs font-semibold rounded-lg transition-colors flex items-center justify-center gap-1.5 shadow-sm">
+                  <span>+</span> Registrar vasos
+                </button>
+              </div>
+            </div>
+
+            <!-- Card 2: Actividad física -->
+            <div class="bg-white rounded-2xl border border-gray-200 p-5 shadow-sm flex flex-col justify-between">
+              <div>
+                <span class="text-[11px] font-bold text-emerald-600 uppercase tracking-wide">ACTIVIDAD FÍSICA</span>
+                <h3 class="text-base font-bold text-gray-900 mt-1">Realizar actividad física</h3>
+                <p class="text-xs text-gray-500 mt-1.5 leading-relaxed">Incorpora movimiento a tu rutina diaria y registra los minutos de actividad realizados.</p>
+                
+                <div class="mt-4 text-xs font-medium text-gray-600">
+                  Meta diaria: <span class="font-bold text-gray-900">30 minutos</span>
+                </div>
+
+                <div class="mt-2">
+                  <div class="flex justify-between text-[11px] font-semibold text-gray-600 mb-1">
+                    <span>Progreso de hoy</span>
+                    <span id="text-activity-progress" class="text-emerald-700 font-bold">20 de 30 minutos completados</span>
+                  </div>
+                  <div class="w-full bg-gray-100 rounded-full h-2.5 overflow-hidden">
+                    <div id="bar-activity-progress" class="bg-brand-emerald h-2.5 rounded-full transition-all duration-300" style="width: 66.6%"></div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="pt-5">
+                <button onclick="registerHabitProgress('activity')" class="w-full py-2 bg-brand-emerald hover:bg-brand-emeraldHover text-white text-xs font-semibold rounded-lg transition-colors flex items-center justify-center gap-1.5 shadow-sm">
+                  <span>+</span> Registrar minutos
+                </button>
+              </div>
+            </div>
+
+            <!-- Card 3: Descanso -->
+            <div class="bg-white rounded-2xl border border-gray-200 p-5 shadow-sm flex flex-col justify-between">
+              <div>
+                <span class="text-[11px] font-bold text-emerald-600 uppercase tracking-wide">DESCANSO</span>
+                <h3 class="text-base font-bold text-gray-900 mt-1">Dormir entre 7 y 8 horas</h3>
+                <p class="text-xs text-gray-500 mt-1.5 leading-relaxed">Establece horarios de sueño regulares y registra las horas que descansas cada noche.</p>
+                
+                <div class="mt-4 text-xs font-medium text-gray-600">
+                  Meta diaria: <span class="font-bold text-gray-900">8 horas de sueño</span>
+                </div>
+
+                <div class="mt-2">
+                  <div class="flex justify-between text-[11px] font-semibold text-gray-600 mb-1">
+                    <span>Progreso de hoy</span>
+                    <span id="text-sleep-progress" class="text-emerald-700 font-bold">6 de 8 horas completadas</span>
+                  </div>
+                  <div class="w-full bg-gray-100 rounded-full h-2.5 overflow-hidden">
+                    <div id="bar-sleep-progress" class="bg-brand-emerald h-2.5 rounded-full transition-all duration-300" style="width: 75%"></div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="pt-5">
+                <button onclick="registerHabitProgress('sleep')" class="w-full py-2 bg-brand-emerald hover:bg-brand-emeraldHover text-white text-xs font-semibold rounded-lg transition-colors flex items-center justify-center gap-1.5 shadow-sm">
+                  <span>+</span> Registrar horas
+                </button>
+              </div>
+            </div>
+
+          </div>
+        </div>
+      </section>
+
+    </main>
+  </div>
+
+  <!-- ========================================== -->
+  <!-- COMPONENTES GLOBALES: TOAST & MODAL        -->
+  <!-- ========================================== -->
+  <div id="toast-notification" class="fixed bottom-6 right-6 z-50 bg-gray-900 text-white text-xs md:text-sm px-5 py-3 rounded-xl shadow-2xl flex items-center gap-3 border border-gray-700 pointer-events-none">
+    <span class="w-2.5 h-2.5 rounded-full bg-emerald-400"></span>
+    <span id="toast-message">Notificación</span>
+  </div>
+
+  <!-- JAVASCRIPT: LÓGICA COMPLETA DE ESTADO Y NAVEGACIÓN -->
+  <script>
+    /* ========================================================= */
+    /* MODELO DE DATOS INICIAL & RECOMENDACIONES (DEL MOCKUP)    */
+    /* ========================================================= */
+    const recommendationsData = [
+      {
+        id: 1,
+        title: "Hábitos alimenticios saludables",
+        category: "Alimentación",
+        objective: "energia",
+        type: "guia",
+        shortDesc: "Consejos prácticos para mantener una alimentación variada y equilibrada.",
+        fullTitle: "Cómo mejorar tus hábitos alimenticios",
+        fullSubtitle: "Descubre cómo incorporar una alimentación variada y equilibrada a tu vida diaria.",
+        image: "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?auto=format&fit=crop&w=900&q=80",
+        tips: [
+          "Prioriza el consumo de frutas y verduras frescas de temporada.",
+          "Mantén una hidratación adecuada durante el día con agua pura.",
+          "Procura mantener horarios regulares de alimentación y porciones conscientes."
+        ]
+      },
+      {
+        id: 2,
+        title: "Ejercicios para hacer en casa",
+        category: "Actividad Física",
+        objective: "energia",
+        type: "rutina",
+        shortDesc: "Rutinas sencillas para incorporar actividad física a tu día.",
+        fullTitle: "Activa tu cuerpo con rutinas funcionales en casa",
+        fullSubtitle: "Mejora tu resistencia cardiovascular y tono muscular sin necesidad de equipamiento.",
+        image: "https://images.unsplash.com/photo-1518611012118-696072aa579a?auto=format&fit=crop&w=900&q=80",
+        tips: [
+          "Inicia con 5 minutos de calentamiento articular dinámico.",
+          "Realiza intervalos de 30 segundos de ejercicio por 30 de descanso.",
+          "Finaliza con estiramientos suaves y respiración diafragmática."
+        ]
+      },
+      {
+        id: 3,
+        title: "Consejos para dormir mejor",
+        category: "Descanso",
+        objective: "sueño",
+        type: "guia",
+        shortDesc: "Hábitos que ayudan a mejorar la calidad de tu descanso nocturno.",
+        fullTitle: "Higiene del sueño para un descanso reparador",
+        fullSubtitle: "Estrategias respaldadas por la ciencia para conciliar el sueño y despertar renovado.",
+        image: "https://images.unsplash.com/photo-1541781774459-bb2af2f05b55?auto=format&fit=crop&w=900&q=80",
+        tips: [
+          "Evita pantallas con luz azul al menos 45 minutos antes de acostarte.",
+          "Mantén la habitación fresca, oscura y ventilada.",
+          "Cena ligero al menos 2 horas antes del descanso nocturno."
+        ]
+      },
+      {
+        id: 4,
+        title: "Pausas activas y respiración consciente",
+        category: "Bienestar",
+        objective: "estres",
+        type: "rutina",
+        shortDesc: "Micro-momentos para relajar la mente durante tu jornada laboral.",
+        fullTitle: "Mindfulness y gestión del estrés cotidiano",
+        fullSubtitle: "Aprende a pausar el piloto automático y recuperar la claridad mental.",
+        image: "https://images.unsplash.com/photo-1506126613408-eca07ce68773?auto=format&fit=crop&w=900&q=80",
+        tips: [
+          "Aplica la técnica de respiración cuadrada 4x4.",
+          "Estira cuello y hombros cada 90 minutos de trabajo continuo.",
+          "Toma 5 minutos para caminar y desconectar visualmente de la pantalla."
+        ]
+      }
+    ];
+
+    /* ========================================================= */
+    /* ESTADO DE LA APLICACIÓN (EN MEMORIA / PERSISTENCIA LOCAL)  */
+    /* ========================================================= */
+    let state = {
+      currentView: 'inicio',
+      previousView: 'inicio',
+      currentDetailId: 1,
+      currentUser: {
+        name: "Camila Morales",
+        email: "camila.morales@bienestar.com",
+        age: 32,
+        isLoggedIn: false
+      },
+      favorites: [1, 2, 3], // Inicial con los 3 del mockup
+      habits: {
+        water: { current: 5, target: 8, unit: 'vasos' },
+        activity: { current: 20, target: 30, unit: 'minutos' },
+        sleep: { current: 6, target: 8, unit: 'horas' }
+      }
+    };
+
+    /* Cargar almacenamiento local seguro si existe */
+    function loadSavedState() {
+      try {
+        const savedFavs = localStorage.getItem('b360_favs');
+        if (savedFavs) state.favorites = JSON.parse(savedFavs);
+        const savedHabits = localStorage.getItem('b360_habits');
+        if (savedHabits) state.habits = JSON.parse(savedHabits);
+      } catch (e) {
+        console.warn("Storage no disponible, usando estado en memoria");
+      }
+    }
+
+    function persistState() {
+      try {
+        localStorage.setItem('b360_favs', JSON.stringify(state.favorites));
+        localStorage.setItem('b360_habits', JSON.stringify(state.habits));
+      } catch (e) {}
+    }
+
+    /* ========================================================= */
+    /* NAVEGACIÓN ENTRE PANTALLAS (SPA)                          */
+    /* ========================================================= */
+    function navigateTo(viewId) {
+      if (state.currentView !== viewId) {
+        state.previousView = state.currentView;
+        state.currentView = viewId;
+      }
+
+      // Ocultar todas las vistas
+      document.querySelectorAll('.view-section').forEach(sec => {
+        sec.classList.remove('active');
+      });
+
+      // Mostrar la vista actual
+      const activeSec = document.getElementById(`view-${viewId}`);
+      if (activeSec) {
+        activeSec.classList.add('active');
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      }
+
+      // Actualizar estilo en la barra lateral (Sidebar)
+      updateSidebarActiveState(viewId);
+
+      // Si la vista es Explorar o Favoritos, renderizar dinámicamente
+      if (viewId === 'explorar') renderExploreCards();
+      if (viewId === 'favoritos') renderFavorites();
+      if (viewId === 'habitos') renderHabitsBars();
+
+      // Cerrar menú móvil si está abierto
+      closeMobileMenu();
+    }
+
+    function goBack() {
+      navigateTo(state.previousView || 'inicio');
+    }
+
+    function updateSidebarActiveState(viewId) {
+      document.querySelectorAll('.nav-btn').forEach(btn => {
+        const target = btn.getAttribute('data-view');
+        if (target === viewId) {
+          // Estilo del mockup: fondo esmeralda #10b981 con texto blanco y bordes redondeados tipo pill
+          btn.className = "nav-btn w-full flex items-center justify-between px-4 py-2.5 rounded-xl text-sm font-semibold transition-all bg-brand-emerald text-white shadow-sm";
+        } else {
+          // Estilo inactivo: texto atenuado con hover oscuro
+          btn.className = "nav-btn w-full flex items-center justify-between px-4 py-2.5 rounded-xl text-sm font-medium transition-all text-gray-300 hover:text-white hover:bg-brand-sidebarHover";
+        }
+      });
+      updateFavoritesBadge();
+    }
+
+    function updateFavoritesBadge() {
+      const badge = document.getElementById('badge-fav-count');
+      if (state.favorites.length > 0) {
+        badge.innerText = state.favorites.length;
+        badge.classList.remove('hidden');
+      } else {
+        badge.classList.add('hidden');
+      }
+    }
+
+    /* ========================================================= */
+    /* VISTA EXPLORAR & FILTROS                                  */
+    /* ========================================================= */
+    function renderExploreCards(items = recommendationsData) {
+      const grid = document.getElementById('explore-results-grid');
+      const counter = document.getElementById('results-count');
+      
+      counter.innerText = `Mostrando ${items.length} ${items.length === 1 ? 'recomendación' : 'recomendaciones'}`;
+      grid.innerHTML = '';
+
+      if (items.length === 0) {
+        grid.innerHTML = `
+          <div class="col-span-full py-12 text-center text-gray-400">
+            <p class="text-sm">No se encontraron recomendaciones con los filtros seleccionados.</p>
+          </div>
+        `;
+        return;
+      }
+
+      items.forEach(rec => {
+        const isFav = state.favorites.includes(rec.id);
+        const card = document.createElement('div');
+        card.className = "bg-white rounded-2xl border border-gray-200/90 overflow-hidden shadow-sm hover:shadow-md transition-shadow flex flex-col";
+        card.innerHTML = `
+          <div class="h-44 w-full overflow-hidden bg-gray-100 relative">
+            <img 
+              src="${rec.image}" 
+              alt="${rec.title}" 
+              class="w-full h-full object-cover transform hover:scale-105 transition-transform duration-300"
+              onerror="this.src='https://placehold.co/600x350/e2e8f0/2d3748?text=Bienestar+360'"
+            />
+            <span class="absolute top-3 left-3 bg-white/90 backdrop-blur-sm text-[10px] font-bold text-gray-700 px-2 py-0.5 rounded-full border border-gray-200/60 uppercase">
+              ${rec.category}
+            </span>
+          </div>
+          <div class="p-5 flex-1 flex flex-col justify-between">
+            <div>
+              <h3 class="font-semibold text-gray-900 text-base">${rec.title}</h3>
+              <p class="text-xs text-gray-500 mt-2 line-clamp-2">${rec.shortDesc}</p>
+            </div>
+            <div class="pt-4 flex items-center justify-between border-t border-gray-50 mt-3">
+              <button onclick="toggleFavoriteFromCard(${rec.id})" class="text-xs ${isFav ? 'text-red-500 font-semibold' : 'text-gray-400 hover:text-red-500'} flex items-center gap-1 transition">
+                <svg class="w-4 h-4 ${isFav ? 'fill-current' : ''}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"/>
+                </svg>
+                ${isFav ? 'Guardado' : 'Guardar'}
+              </button>
+              <button onclick="openDetailView(${rec.id})" class="text-xs font-semibold text-emerald-600 hover:text-emerald-700 flex items-center gap-1 group">
+                Leer recomendación <span class="group-hover:translate-x-1 transition-transform">→</span>
+              </button>
+            </div>
+          </div>
+        `;
+        grid.appendChild(card);
+      });
+    }
+
+    function applyFilters() {
+      const cat = document.getElementById('filter-categoria').value;
+      const obj = document.getElementById('filter-objetivo').value;
+      const type = document.getElementById('filter-tipo').value;
+
+      let filtered = recommendationsData.filter(item => {
+        let matchCat = (cat === 'todas') || (item.category === cat);
+        let matchObj = (obj === 'todos') || (item.objective === obj);
+        let matchType = (type === 'todos') || (item.type === type);
+        return matchCat && matchObj && matchType;
+      });
+
+      renderExploreCards(filtered);
+    }
+
+    function filterByCategory(categoryName) {
+      navigateTo('explorar');
+      const catSelect = document.getElementById('filter-categoria');
+      if (catSelect) {
+        catSelect.value = categoryName;
+        applyFilters();
+      }
+    }
+
+    function handleGlobalSearch(term) {
+      if (!term.trim()) return;
+      navigateTo('explorar');
+      const termLower = term.toLowerCase();
+      const results = recommendationsData.filter(r => 
+        r.title.toLowerCase().includes(termLower) ||
+        r.category.toLowerCase().includes(termLower) ||
+        r.shortDesc.toLowerCase().includes(termLower)
+      );
+      renderExploreCards(results);
+      showToast(`Búsqueda: "${term}" (${results.length} hallados)`);
+    }
+
+    /* ========================================================= */
+    /* VISTA DETALLE (Mockup 03)                                 */
+    /* ========================================================= */
+    function openDetailView(recId) {
+      const rec = recommendationsData.find(r => r.id === recId) || recommendationsData[0];
+      state.currentDetailId = rec.id;
+
+      document.getElementById('detail-category-tag').innerText = rec.category.toUpperCase();
+      document.getElementById('detail-title').innerText = rec.fullTitle || rec.title;
+      document.getElementById('detail-subtitle').innerText = rec.fullSubtitle || rec.shortDesc;
+      document.getElementById('detail-main-img').src = rec.image;
+
+      updateDetailFavoriteButton();
+      navigateTo('detalle');
+    }
+
+    function updateDetailFavoriteButton() {
+      const btn = document.getElementById('btn-toggle-favorite');
+      const text = document.getElementById('btn-fav-text');
+      const isFav = state.favorites.includes(state.currentDetailId);
+
+      if (isFav) {
+        text.innerText = "Quitar de favoritos";
+        btn.classList.add('bg-gray-800');
+        btn.classList.remove('bg-brand-emerald');
+      } else {
+        text.innerText = "Guardar en favoritos";
+        btn.classList.remove('bg-gray-800');
+        btn.classList.add('bg-brand-emerald');
+      }
+    }
+
+    function toggleCurrentFavorite() {
+      const id = state.currentDetailId;
+      const index = state.favorites.indexOf(id);
+      if (index > -1) {
+        state.favorites.splice(index, 1);
+        showToast("Eliminado de tus favoritos");
+      } else {
+        state.favorites.push(id);
+        showToast("¡Guardado en tus favoritos!");
+      }
+      persistState();
+      updateDetailFavoriteButton();
+      updateFavoritesBadge();
+    }
+
+    function toggleFavoriteFromCard(id) {
+      const index = state.favorites.indexOf(id);
+      if (index > -1) {
+        state.favorites.splice(index, 1);
+        showToast("Eliminado de favoritos");
+      } else {
+        state.favorites.push(id);
+        showToast("Añadido a favoritos");
+      }
+      persistState();
+      renderExploreCards();
+      updateFavoritesBadge();
+    }
+
+    function markCurrentAsHabit() {
+      showToast("¡Recomendación vinculada exitosamente a tus hábitos diarios!");
+      navigateTo('habitos');
+    }
+
+    /* ========================================================= */
+    /* VISTA FAVORITOS (Mockup 07)                               */
+    /* ========================================================= */
+    function renderFavorites() {
+      const grid = document.getElementById('favorites-grid');
+      const emptyState = document.getElementById('favorites-empty-state');
+      grid.innerHTML = '';
+
+      const favItems = recommendationsData.filter(r => state.favorites.includes(r.id));
+
+      if (favItems.length === 0) {
+        emptyState.classList.remove('hidden');
+        return;
+      } else {
+        emptyState.classList.add('hidden');
+      }
+
+      favItems.forEach(item => {
+        const card = document.createElement('div');
+        card.className = "bg-white rounded-2xl border border-gray-200 p-6 shadow-sm flex flex-col justify-between";
+        card.innerHTML = `
+          <div>
+            <span class="text-xs font-bold text-emerald-600">${item.category}</span>
+            <h3 class="text-base font-bold text-gray-900 mt-2">${item.title}</h3>
+            <p class="text-xs text-gray-500 mt-2 leading-relaxed">${item.shortDesc}</p>
+          </div>
+          <div class="pt-6 flex items-center justify-between border-t border-gray-100 mt-4">
+            <button onclick="removeFavorite(${item.id})" class="text-xs font-semibold text-gray-500 hover:text-red-600 flex items-center gap-1 transition">
+              <svg class="w-3.5 h-3.5 fill-current text-gray-400" viewBox="0 0 20 20">
+                <path fill-rule="evenodd" d="M3.172 5.172a4 4 0 015.656 0L10 6.343l1.172-1.171a4 4 0 115.656 5.656L10 17.657l-6.828-6.829a4 4 0 010-5.656z" clip-rule="evenodd" />
+              </svg>
+              Quitar de favoritos
+            </button>
+            <button onclick="openDetailView(${item.id})" class="text-xs font-semibold text-emerald-600 hover:text-emerald-700 flex items-center gap-1 group">
+              Leer recomendación <span class="group-hover:translate-x-1 transition-transform">→</span>
+            </button>
+          </div>
+        `;
+        grid.appendChild(card);
+      });
+    }
+
+    function removeFavorite(id) {
+      state.favorites = state.favorites.filter(favId => favId !== id);
+      persistState();
+      renderFavorites();
+      updateFavoritesBadge();
+      showToast("Recomendación quitada de favoritos");
+    }
+
+    /* ========================================================= */
+    /* VISTA MIS HÁBITOS & BARRAS DE PROGRESO (Mockup 08)        */
+    /* ========================================================= */
+    function renderHabitsBars() {
+      // Agua
+      const w = state.habits.water;
+      const wPct = Math.min(100, Math.round((w.current / w.target) * 100));
+      document.getElementById('text-water-progress').innerText = `${w.current} de ${w.target} vasos completados`;
+      document.getElementById('bar-water-progress').style.width = `${wPct}%`;
+
+      // Actividad física
+      const a = state.habits.activity;
+      const aPct = Math.min(100, Math.round((a.current / a.target) * 100));
+      document.getElementById('text-activity-progress').innerText = `${a.current} de ${a.target} minutos completados`;
+      document.getElementById('bar-activity-progress').style.width = `${aPct}%`;
+
+      // Sueño
+      const s = state.habits.sleep;
+      const sPct = Math.min(100, Math.round((s.current / s.target) * 100));
+      document.getElementById('text-sleep-progress').innerText = `${s.current} de ${s.target} horas completadas`;
+      document.getElementById('bar-sleep-progress').style.width = `${sPct}%`;
+    }
+
+    function registerHabitProgress(type) {
+      if (type === 'water') {
+        state.habits.water.current += 1;
+        showToast(`¡Excelente! Registraste 1 vaso de agua (${state.habits.water.current}/${state.habits.water.target})`);
+      } else if (type === 'activity') {
+        state.habits.activity.current += 5;
+        showToast(`¡En movimiento! Sumaste 5 minutos (${state.habits.activity.current}/${state.habits.activity.target} min)`);
+      } else if (type === 'sleep') {
+        state.habits.sleep.current = (state.habits.sleep.current >= state.habits.sleep.target) ? 0 : state.habits.sleep.current + 1;
+        showToast(`Horas de descanso actualizadas (${state.habits.sleep.current} hrs)`);
+      }
+      persistState();
+      renderHabitsBars();
+    }
+
+    /* ========================================================= */
+    /* AUTENTICACIÓN Y PERFIL                                    */
+    /* ========================================================= */
+    function handleRegister(e) {
+      e.preventDefault();
+      const name = document.getElementById('reg-name').value;
+      const email = document.getElementById('reg-email').value;
+      const pass = document.getElementById('reg-password').value;
+      const confirmPass = document.getElementById('reg-confirm-password').value;
+
+      if (pass !== confirmPass) {
+        showToast("Las contraseñas no coinciden. Inténtalo de nuevo.");
+        return;
+      }
+
+      state.currentUser = {
+        name: name,
+        email: email,
+        age: 30,
+        isLoggedIn: true
+      };
+
+      document.getElementById('profile-name').value = name;
+      document.getElementById('profile-email').value = email;
+      updateAuthUI();
+      showToast(`¡Bienvenido a Bienestar 360, ${name}!`);
+      navigateTo('inicio');
+    }
+
+    function handleLogin(e) {
+      e.preventDefault();
+      const email = document.getElementById('login-email').value;
+      state.currentUser.isLoggedIn = true;
+      state.currentUser.email = email;
+      state.currentUser.name = email.split('@')[0];
+
+      document.getElementById('profile-email').value = email;
+      document.getElementById('profile-name').value = state.currentUser.name;
+
+      updateAuthUI();
+      showToast("Sesión iniciada con éxito");
+      navigateTo('inicio');
+    }
+
+    function logoutUser() {
+      state.currentUser.isLoggedIn = false;
+      updateAuthUI();
+      showToast("Has cerrado sesión");
+      navigateTo('inicio');
+    }
+
+    function updateAuthUI() {
+      const actions = document.getElementById('auth-header-actions');
+      const profile = document.getElementById('user-header-profile');
+      const nameSpan = document.getElementById('user-display-name');
+
+      if (state.currentUser.isLoggedIn) {
+        actions.classList.add('hidden');
+        profile.classList.remove('hidden');
+        profile.classList.add('flex');
+        nameSpan.innerText = state.currentUser.name;
+      } else {
+        actions.classList.remove('hidden');
+        profile.classList.add('hidden');
+        profile.classList.remove('flex');
+      }
+    }
+
+    function handleSaveProfile(e) {
+      e.preventDefault();
+      state.currentUser.name = document.getElementById('profile-name').value;
+      state.currentUser.email = document.getElementById('profile-email').value;
+      state.currentUser.age = document.getElementById('profile-age').value;
+      updateAuthUI();
+      showToast("¡Cambios guardados con éxito en tu perfil!");
+    }
+
+    /* ========================================================= */
+    /* UTILIDADES (TOAST, MENÚ MÓVIL)                            */
+    /* ========================================================= */
+    let toastTimeout;
+    function showToast(message) {
+      const toast = document.getElementById('toast-notification');
+      const text = document.getElementById('toast-message');
+      text.innerText = message;
+      toast.classList.add('show');
+
+      clearTimeout(toastTimeout);
+      toastTimeout = setTimeout(() => {
+        toast.classList.remove('show');
+      }, 3000);
+    }
+
+    function toggleMobileMenu() {
+      const sidebar = document.getElementById('sidebar-nav');
+      const overlay = document.getElementById('sidebar-overlay');
+      const isOpen = !sidebar.classList.contains('-translate-x-full');
+
+      if (isOpen) {
+        closeMobileMenu();
+      } else {
+        sidebar.classList.remove('-translate-x-full');
+        overlay.classList.remove('hidden');
+      }
+    }
+
+    function closeMobileMenu() {
+      const sidebar = document.getElementById('sidebar-nav');
+      const overlay = document.getElementById('sidebar-overlay');
+      sidebar.classList.add('-translate-x-full');
+      overlay.classList.add('hidden');
+    }
+
+    document.getElementById('mobile-menu-toggle').addEventListener('click', toggleMobileMenu);
+
+    /* INICIALIZACIÓN AL CARGAR LA PÁGINA */
+    window.addEventListener('DOMContentLoaded', () => {
+      loadSavedState();
+      navigateTo('inicio');
+      updateFavoritesBadge();
+    });
+  </script>
+</body>
+</html>
