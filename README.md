@@ -57,10 +57,10 @@ Instalacion y Ejecucion Local
 Para clonar y ejecutar el proyecto en un entorno local:
 
 # 1. Clonar el repositorio
-git clone https://github.com/tu-usuario/bienestar-360-web.git
+git clone https://github.com/halcondorado123/Bienestar360.git
 
 # 2. Entrar al directorio
-cd bienestar-360-web
+cd bienestar360
 
 # 3. Servir localmente
 npx serve public
